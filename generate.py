@@ -7,26 +7,6 @@ import logging
 from datetime import datetime
 import yaml
 
-VERSION = "chalkdust v0.1.0"
-ABOUT = (
-    "chalkdust – a minimal static site generator for maths notes.\n"
-    "Built for clean, LaTeX-style markdown → HTML conversion with MathJax support."
-)
-ASCII_7 = '''
-chalkdustchalkdustchalkdustchalkdustchalkdust
-chalkdustchalkdustchalkdustchalkdustchalkdust
-                                      chalkdust
-                                  chalkdust
-                               chalkdust
-                            chalkdust
-                         chalkdust
-                      chalkdust
-                   chalkdust
-              chalkdust
-         chalkdust
-     chalkdust
-chalkdust
-'''
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Convert Markdown maths notes to HTML.")
@@ -35,9 +15,8 @@ def parse_args():
     parser.add_argument("--output", type=str, help="Output folder for .html files")
     parser.add_argument("--title", type=str, help="Custom title for a single note")
     parser.add_argument("--config", type=str, help="Path to config.yaml file (optional)")
-    parser.add_argument("--version", action="store_true", help="Show version info and exit")
-    parser.add_argument("--about", action="store_true", help="Show project description and exit")
-    parser.add_argument("--dust", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-index", action="store_true", help="Do not generate index.html after folder conversion")
+
     # Mutually exclusive group for overwrite options
     overwrite_group = parser.add_mutually_exclusive_group()
     overwrite_group.add_argument("--no-overwrite", action="store_true", help="Skip files that already exist")
@@ -66,7 +45,6 @@ def setup_logging(quiet=False, verbose=False):
 
     log_level_console = logging.WARNING if quiet else logging.DEBUG if verbose else logging.INFO
 
-    # Create logger
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -75,7 +53,6 @@ def setup_logging(quiet=False, verbose=False):
         ]
     )
 
-    # Add console handler with dynamic verbosity
     console = logging.StreamHandler()
     console.setLevel(log_level_console)
     console.setFormatter(logging.Formatter("%(message)s"))
@@ -83,13 +60,11 @@ def setup_logging(quiet=False, verbose=False):
 
     logging.info("Logging started")
 
-def convert_file(input_path, output_path, template_path, title="Chalkdust Note"):
-    # Read Markdown
+def convert_file(input_path, output_path, template_path, title="Chalkdust Note", show_index_link=False):
     with open(input_path, "r", encoding="utf-8") as f:
         md_content = f.read()
     html_content = markdown.markdown(md_content, extensions=["fenced_code", "codehilite"])
 
-    # Load template
     env = Environment(loader=FileSystemLoader(template_path))
     template = env.get_template("base.html")
 
@@ -100,32 +75,32 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
             logging.error("Template is missing a '{{ content }}' placeholder.")
             return
 
-    # Render page
-    rendered = template.render(title=title, content=html_content)
+    rendered = template.render(title=title, content=html_content, show_index_link=show_index_link)
 
-    # Save output
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(rendered)
     logging.info(f"Converted: {input_path} → {output_path}")
 
+def generate_index(output_dir, template_path):
+    html_files = [f for f in os.listdir(output_dir) if f.endswith(".html") and f != "index.html"]
+    links = []
+    for file in sorted(html_files):
+        name = os.path.splitext(file)[0].replace("-", " ").replace("_", " ").title()
+        links.append(f'<li><a href="{file}">{name}</a></li>')
+    index_content = f"<h1>Notes</h1><ul>{''.join(links)}</ul>"
+
+    env = Environment(loader=FileSystemLoader(template_path))
+    template = env.get_template("base.html")
+    rendered = template.render(title="Index", content=index_content, show_index_link=False)
+
+    with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
+        f.write(rendered)
+    logging.info("Generated index.html")
+
 if __name__ == "__main__":
     args = parse_args()
 
-    if args.version:
-        print(VERSION)
-        sys.exit(0)
-
-    if args.about:
-        print(ABOUT)
-        sys.exit(0)
-
-    if args.dust:
-        print("You found the 7 🕵️‍♀️")
-        print(ASCII_7)
-        sys.exit(0)
-
-    # Load config file
     config_data = {}
 
     if args.config:
@@ -145,13 +120,11 @@ if __name__ == "__main__":
     if args.file and args.input:
         logging.warning("⚠️ --file and --input were both provided. Using --file and ignoring --input.")
 
-    # Resolve effective options
     input_dir = resolve_option(args.input, "input", config_data, default="notes")
     output_dir = resolve_option(args.output, "output", config_data, default="site")
     template_path = resolve_option(None, "template", config_data, default="templates")
     default_title = resolve_option(args.title, "title", config_data, default="Chalkdust Note")
 
-    # Single file mode
     if args.file:
         if not os.path.isfile(args.file):
             error(f"Input file not found: {args.file}")
@@ -172,7 +145,7 @@ if __name__ == "__main__":
             logging.info(f"⏭️  Skipped (already exists): {output_file}")
             sys.exit(0)
 
-        convert_file(args.file, output_file, template_path=template_path, title=default_title)
+        convert_file(args.file, output_file, template_path=template_path, title=default_title, show_index_link=False)
 
     else:
         if args.title:
@@ -216,11 +189,14 @@ if __name__ == "__main__":
                     skipped += 1
                     continue
 
-                convert_file(input_path, output_path, template_path=template_path, title=title)
+                convert_file(input_path, output_path, template_path=template_path, title=title, show_index_link=not args.no_index)
                 converted += 1
 
             except Exception as e:
                 logging.error(f"Failed to convert {input_path}: {e}")
                 errors += 1
+
+        if not args.no_index:
+            generate_index(output_dir, template_path)
 
         logging.info(f"✅ Done: {converted} converted, {skipped} skipped, {errors} errors.")

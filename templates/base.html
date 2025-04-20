@@ -17,6 +17,9 @@
   </script>
 </head>
 <body>
+  {% if show_index_link %}
+  <p><a href="index.html">⬅ Back to index</a></p>
+  {% endif %}
   <h1>{{ title }}</h1>
   <main>
     {{ content | safe }}
