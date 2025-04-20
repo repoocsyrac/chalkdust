@@ -13,6 +13,11 @@ def parse_args():
     parser.add_argument("--input", type=str, default="notes", help="Input folder containing .md files (default: notes/)")
     parser.add_argument("--output", type=str, default="site", help="Output folder for .html files (default: site/)")
     parser.add_argument("--title", type=str, help="Custom title for a single note")
+    # Mutually exclusive group for overwrite options
+    overwrite_group = parser.add_mutually_exclusive_group()
+    overwrite_group.add_argument("--no-overwrite", action="store_true", help="Skip files that already exist")
+    overwrite_group.add_argument("--force", action="store_true", help="Force overwriting of existing output files (default behaviour)")
+
     return parser.parse_args()
 
 # Error reporting
@@ -72,6 +77,10 @@ if __name__ == "__main__":
 
         filename = os.path.splitext(os.path.basename(args.file))[0] + ".html"
         output_file = os.path.join(args.output, filename)
+
+        if args.no_overwrite and os.path.exists(output_file):
+            logging.info(f"⏭️  Skipped (already exists): {output_file}")
+            sys.exit(0)
         convert_file(args.file, output_file, template_path="templates", title=args.title or "Chalkdust Note")
 
     else:
@@ -117,6 +126,11 @@ if __name__ == "__main__":
                         continue
 
                 # Convert file
+                if args.no_overwrite and os.path.exists(output_path):
+                    logging.info(f"⏭️  Skipped (already exists): {output_path}")
+                    skipped += 1
+                    continue
+
                 convert_file(input_path, output_path, template_path="templates", title=title)
                 converted += 1
 
@@ -124,4 +138,4 @@ if __name__ == "__main__":
                 logging.error(f"Failed to convert {input_path}: {e}")
                 errors += 1
 
-            logging.info(f"✅ Done: {converted} converted, {skipped} skipped, {errors} errors.")
+        logging.info(f"✅ Done: {converted} converted, {skipped} skipped, {errors} errors.")
