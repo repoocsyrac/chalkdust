@@ -10,6 +10,7 @@ def parse_args():
     parser.add_argument("--file", type=str, help="Convert a single Markdown file")
     parser.add_argument("--input", type=str, default="notes", help="Input folder containing .md files (default: notes/)")
     parser.add_argument("--output", type=str, default="site", help="Output folder for .html files (default: site/)")
+    parser.add_argument("--title", type=str, help="Custom title for a single note")
     return parser.parse_args()
 
 # Error reporting
@@ -39,6 +40,9 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
 if __name__ == "__main__":
     args = parse_args()
 
+    if args.file and args.input != "notes":
+        print("Warning: --file and --input were both provided. Using --file and ignoring --input.")
+
     # Check if single file mode
     if args.file:
         if not os.path.isfile(args.file):
@@ -49,10 +53,13 @@ if __name__ == "__main__":
 
         filename = os.path.splitext(os.path.basename(args.file))[0] + ".html"
         output_file = os.path.join(args.output, filename)
-        convert_file(args.file, output_file, template_path="templates")
+        convert_file(args.file, output_file, template_path="templates", title=args.title or "Chalkdust Note")
 
     else:
         # Folder mode
+        if args.title:
+            print("Warning: --title will be ignored when using --input (folder mode).")
+
         input_dir = args.input or "notes"
         output_dir = args.output or "site"
 
@@ -72,4 +79,5 @@ if __name__ == "__main__":
             input_path = os.path.join(input_dir, filename)
             output_filename = os.path.splitext(filename)[0] + ".html"
             output_path = os.path.join(output_dir, output_filename)
-            convert_file(input_path, output_path, template_path="templates")
+            title = os.path.splitext(filename)[0].replace("-", " ").replace("_", " ").title()
+            convert_file(input_path, output_path, template_path="templates", title=title)
