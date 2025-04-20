@@ -5,14 +5,16 @@ from jinja2 import Environment, FileSystemLoader
 import sys
 import logging
 from datetime import datetime
+import yaml
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Convert Markdown maths notes to HTML.")
     parser.add_argument("--file", type=str, help="Convert a single Markdown file")
-    parser.add_argument("--input", type=str, default="notes", help="Input folder containing .md files (default: notes/)")
-    parser.add_argument("--output", type=str, default="site", help="Output folder for .html files (default: site/)")
+    parser.add_argument("--input", type=str, help="Input folder containing .md files")
+    parser.add_argument("--output", type=str, help="Output folder for .html files")
     parser.add_argument("--title", type=str, help="Custom title for a single note")
+    parser.add_argument("--config", type=str, help="Path to config.yaml file (optional)")
     # Mutually exclusive group for overwrite options
     overwrite_group = parser.add_mutually_exclusive_group()
     overwrite_group.add_argument("--no-overwrite", action="store_true", help="Skip files that already exist")
@@ -23,6 +25,10 @@ def parse_args():
     verbosity.add_argument("--verbose", action="store_true", help="Show extra terminal output (debug level)")
 
     return parser.parse_args()
+
+# Merge CLI arguments & config & defaults
+def resolve_option(cli_value, config_key, config_dict, default=None):
+    return cli_value if cli_value is not None else config_dict.get(config_key, default)
 
 # Error reporting
 def error(msg):
@@ -54,7 +60,6 @@ def setup_logging(quiet=False, verbose=False):
 
     logging.info("Logging started")
 
-
 def convert_file(input_path, output_path, template_path, title="Chalkdust Note"):
     # Read Markdown
     with open(input_path, "r", encoding="utf-8") as f:
@@ -83,18 +88,40 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
 
 if __name__ == "__main__":
     args = parse_args()
+
+    # Load config file
+    config_data = {}
+
+    if args.config:
+        if os.path.isfile(args.config):
+            with open(args.config, "r", encoding="utf-8") as f:
+                config_data = yaml.safe_load(f) or {}
+            logging.info(f"Loaded config from {args.config}")
+        else:
+            logging.warning(f"⚠️ Config file not found: {args.config} — using defaults")
+    elif os.path.isfile("config.yaml"):
+        with open("config.yaml", "r", encoding="utf-8") as f:
+            config_data = yaml.safe_load(f) or {}
+        logging.info("Loaded config from config.yaml")
+
     setup_logging(quiet=args.quiet, verbose=args.verbose)
 
-    if args.file and args.input != "notes":
+    if args.file and args.input:
         logging.warning("⚠️ --file and --input were both provided. Using --file and ignoring --input.")
 
-    # Check if single file mode
+    # Resolve effective options
+    input_dir = resolve_option(args.input, "input", config_data, default="notes")
+    output_dir = resolve_option(args.output, "output", config_data, default="site")
+    template_path = resolve_option(None, "template", config_data, default="templates")
+    default_title = resolve_option(args.title, "title", config_data, default="Chalkdust Note")
+
+    # Single file mode
     if args.file:
         if not os.path.isfile(args.file):
             error(f"Input file not found: {args.file}")
 
-        if not os.path.isdir("templates") or not os.path.isfile("templates/base.html"):
-            error("Template not found at 'templates/base.html'")
+        if not os.path.isdir(template_path) or not os.path.isfile(os.path.join(template_path, "base.html")):
+            error(f"Template not found at '{template_path}/base.html'")
 
         with open(args.file, "r", encoding="utf-8") as f:
             content = f.read()
@@ -103,32 +130,29 @@ if __name__ == "__main__":
                 sys.exit(0)
 
         filename = os.path.splitext(os.path.basename(args.file))[0] + ".html"
-        output_file = os.path.join(args.output, filename)
+        output_file = os.path.join(output_dir, filename)
 
         if args.no_overwrite and os.path.exists(output_file):
             logging.info(f"⏭️  Skipped (already exists): {output_file}")
             sys.exit(0)
-        convert_file(args.file, output_file, template_path="templates", title=args.title or "Chalkdust Note")
+
+        convert_file(args.file, output_file, template_path=template_path, title=default_title)
 
     else:
-        # Folder mode
         if args.title:
             logging.warning("⚠️ --title will be ignored when using --input (folder mode).")
-
-        input_dir = args.input or "notes"
-        output_dir = args.output or "site"
 
         if not os.path.isdir(input_dir):
             error(f"Input folder not found: {input_dir}")
 
-        if not os.path.isdir("templates") or not os.path.isfile("templates/base.html"):
-            error("Template not found at 'templates/base.html'")
+        if not os.path.isdir(template_path) or not os.path.isfile(os.path.join(template_path, "base.html")):
+            error(f"Template not found at '{template_path}/base.html'")
 
         md_files = [f for f in os.listdir(input_dir) if f.endswith(".md")]
         if not md_files:
             error(f"No .md files found in '{input_dir}'")
 
-        print(f"Converting {len(md_files)} files in '{input_dir}' → '{output_dir}'")
+        logging.info(f"Converting {len(md_files)} files in '{input_dir}' → '{output_dir}'")
 
         converted = 0
         skipped = 0
@@ -145,20 +169,18 @@ if __name__ == "__main__":
                     skipped += 1
                     continue
 
-                # Check for empty markdown file
                 with open(input_path, "r", encoding="utf-8") as f:
                     if not f.read().strip():
                         logging.warning(f"⚠️ Skipping empty file: {input_path}")
                         skipped += 1
                         continue
 
-                # Convert file
                 if args.no_overwrite and os.path.exists(output_path):
                     logging.info(f"⏭️  Skipped (already exists): {output_path}")
                     skipped += 1
                     continue
 
-                convert_file(input_path, output_path, template_path="templates", title=title)
+                convert_file(input_path, output_path, template_path=template_path, title=title)
                 converted += 1
 
             except Exception as e:
