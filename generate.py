@@ -17,6 +17,10 @@ def parse_args():
     overwrite_group = parser.add_mutually_exclusive_group()
     overwrite_group.add_argument("--no-overwrite", action="store_true", help="Skip files that already exist")
     overwrite_group.add_argument("--force", action="store_true", help="Force overwriting of existing output files (default behaviour)")
+    # Mutually exclusive group for verbosity options
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument("--quiet", action="store_true", help="Suppress most terminal output")
+    verbosity.add_argument("--verbose", action="store_true", help="Show extra terminal output (debug level)")
 
     return parser.parse_args()
 
@@ -26,20 +30,30 @@ def error(msg):
     sys.exit(1)
 
 # Logging
-def setup_logging():
+def setup_logging(quiet=False, verbose=False):
     os.makedirs("logs", exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logfile = f"logs/build_{timestamp}.log"
 
+    log_level_console = logging.WARNING if quiet else logging.DEBUG if verbose else logging.INFO
+
+    # Create logger
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(logfile, encoding="utf-8"),
-            logging.StreamHandler()
+            logging.FileHandler(logfile, encoding="utf-8")
         ]
     )
+
+    # Add console handler with dynamic verbosity
+    console = logging.StreamHandler()
+    console.setLevel(log_level_console)
+    console.setFormatter(logging.Formatter("%(message)s"))
+    logging.getLogger().addHandler(console)
+
     logging.info("Logging started")
+
 
 def convert_file(input_path, output_path, template_path, title="Chalkdust Note"):
     # Read Markdown
@@ -62,7 +76,7 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
 
 if __name__ == "__main__":
     args = parse_args()
-    setup_logging()
+    setup_logging(quiet=args.quiet, verbose=args.verbose)
 
     if args.file and args.input != "notes":
         logging.warning("⚠️ --file and --input were both provided. Using --file and ignoring --input.")
