@@ -3,6 +3,8 @@ import argparse
 import markdown
 from jinja2 import Environment, FileSystemLoader
 import sys
+import logging
+from datetime import datetime
 
 
 def parse_args():
@@ -15,8 +17,24 @@ def parse_args():
 
 # Error reporting
 def error(msg):
-    print(f"Error: {msg}")
+    logging.error(f"❌ {msg}")
     sys.exit(1)
+
+# Logging
+def setup_logging():
+    os.makedirs("logs", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    logfile = f"logs/build_{timestamp}.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(logfile, encoding="utf-8"),
+            logging.StreamHandler()
+        ]
+    )
+    logging.info("Logging started")
 
 def convert_file(input_path, output_path, template_path, title="Chalkdust Note"):
     # Read Markdown
@@ -35,13 +53,14 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(rendered)
-    print(f"Converted: {input_path} → {output_path}")
+    logging.info(f"Converted: {input_path} → {output_path}")
 
 if __name__ == "__main__":
     args = parse_args()
+    setup_logging()
 
     if args.file and args.input != "notes":
-        print("Warning: --file and --input were both provided. Using --file and ignoring --input.")
+        logging.warning("⚠️ --file and --input were both provided. Using --file and ignoring --input.")
 
     # Check if single file mode
     if args.file:
@@ -58,7 +77,7 @@ if __name__ == "__main__":
     else:
         # Folder mode
         if args.title:
-            print("Warning: --title will be ignored when using --input (folder mode).")
+            logging.warning("⚠️ --title will be ignored when using --input (folder mode).")
 
         input_dir = args.input or "notes"
         output_dir = args.output or "site"
