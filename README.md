@@ -32,7 +32,7 @@ If you just want to use Chalkdust to build your own site (without touching the i
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/your-username/chalkdust.git
+   git clone https://github.com/repoocsyrac/chalkdust.git
    cd chalkdust
    ```
 
