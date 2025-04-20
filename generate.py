@@ -65,6 +65,13 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
     env = Environment(loader=FileSystemLoader(template_path))
     template = env.get_template("base.html")
 
+    template_path_file = os.path.join(template_path, "base.html")
+    with open(template_path_file, "r", encoding="utf-8") as f:
+        template_source = f.read()
+        if "{{ content" not in template_source:
+            logging.error("Template is missing a '{{ content }}' placeholder.")
+            return
+
     # Render page
     rendered = template.render(title=title, content=html_content)
 
@@ -88,6 +95,12 @@ if __name__ == "__main__":
 
         if not os.path.isdir("templates") or not os.path.isfile("templates/base.html"):
             error("Template not found at 'templates/base.html'")
+
+        with open(args.file, "r", encoding="utf-8") as f:
+            content = f.read()
+            if not content.strip():
+                logging.warning(f"⚠️ Skipping empty file: {args.file}")
+                sys.exit(0)
 
         filename = os.path.splitext(os.path.basename(args.file))[0] + ".html"
         output_file = os.path.join(args.output, filename)
