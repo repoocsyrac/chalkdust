@@ -26,13 +26,41 @@ pip install -r requirements.txt
 
 ---
 
-## 🛠 Usage
+## 🔧 How to Use It
+
+If you just want to use Chalkdust to build your own site (without touching the internal code):
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/your-username/chalkdust.git
+   cd chalkdust
+   ```
+
+2. Install the requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Add your Markdown notes to the `notes/` folder (or another folder you choose)
+
+4. Run the generator:
+   ```bash
+   python generate.py
+   ```
+
+5. Your finished HTML site will be in the `site/` folder — ready to upload, zip, or deploy anywhere (e.g. GitHub Pages, Netlify)
+
+> Only the contents of `site/` are needed to host your website. You don’t need to copy any templates, source code, logs, or Markdown files.
+
+---
+
+## 🛠 CLI Usage
 
 ### Basic folder conversion:
 ```bash
 python generate.py
 ```
-This converts all Markdown files in the `notes/` folder and outputs HTML to the `site/` folder.
+Converts all Markdown files in `notes/` → `site/`.
 
 ### Convert a single file:
 ```bash
@@ -88,6 +116,7 @@ Supports full MathJax LaTeX for inline (`$...$`) and block (`$$...$$`) maths.
 ## 🪄 Extras
 - `--version` — show version info
 - `--about` — a short description of the project
+- `--dust` — easter egg 🕵️
 
 ---
 
@@ -102,6 +131,28 @@ chalkdust/
 ├── generate.py         # Main CLI tool
 ├── config.yaml         # (Optional) config
 └── requirements.txt    # Python dependencies
+```
+
+---
+
+## 🚀 Deploying to GitHub Pages
+
+If you want to publish your generated site, just push the contents of the `site/` folder to GitHub Pages.
+
+Recommended: output to a `docs/` folder instead and set GitHub Pages to serve from it:
+
+```bash
+python generate.py --output docs
+touch docs/.nojekyll  # optional, avoids issues with MathJax
+```
+
+Then enable GitHub Pages in your repo settings:
+- **Branch**: `main`
+- **Folder**: `/docs`
+
+Your site will be live at:
+```
+https://your-username.github.io/your-repo-name/
 ```
 
 ---
