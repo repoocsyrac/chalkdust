@@ -1,0 +1,102 @@
+/* Import Merriweather */
+@import url('https://fonts.googleapis.com/css2?family=Merriweather&display=swap');
+
+body {
+  background-color: #1a2b1f;
+  color: #e4e4e4;
+  font-family: 'Merriweather', serif;
+  font-size: 1.1rem;
+  line-height: 1.9;
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 3rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+main {
+  margin-top: 2rem;
+}
+
+h1 {
+  font-family: 'Merriweather', serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #f0f0f0;
+  border-bottom: 2px solid #555;
+  padding-bottom: 0.4rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-family: 'Merriweather', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #eeeeee;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-family: 'Merriweather', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #dddddd;
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
+}
+
+p {
+  font-weight: 300;
+  margin: 1rem 0;
+}
+
+ul {
+  margin-left: 1.5rem;
+  padding-left: 0.5rem;
+}
+
+a {
+  color: #c6eac9;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+code, pre {
+  background-color: #2b3c2f;
+  color: #f3f3f3;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #3b3b3b;
+  margin: 2rem 0;
+}
+
+h4 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #cccccc;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  h5 {
+    font-size: 1rem;
+    font-weight: 500;
+    font-style: italic;
+    color: #bbbbbb;
+    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  
