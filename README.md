@@ -116,7 +116,6 @@ Supports full MathJax LaTeX for inline (`$...$`) and block (`$$...$$`) maths.
 ## 🪄 Extras
 - `--version` — show version info
 - `--about` — a short description of the project
-- `--dust` — easter egg 🕵️
 
 ---
 
