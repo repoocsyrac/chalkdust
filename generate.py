@@ -94,9 +94,34 @@ if __name__ == "__main__":
 
         print(f"Converting {len(md_files)} files in '{input_dir}' → '{output_dir}'")
 
+        converted = 0
+        skipped = 0
+        errors = 0
+
         for filename in md_files:
             input_path = os.path.join(input_dir, filename)
             output_filename = os.path.splitext(filename)[0] + ".html"
             output_path = os.path.join(output_dir, output_filename)
             title = os.path.splitext(filename)[0].replace("-", " ").replace("_", " ").title()
-            convert_file(input_path, output_path, template_path="templates", title=title)
+            try:
+                if not os.path.isfile(input_path):
+                    logging.warning(f"⚠️ Skipping missing file: {input_path}")
+                    skipped += 1
+                    continue
+
+                # Check for empty markdown file
+                with open(input_path, "r", encoding="utf-8") as f:
+                    if not f.read().strip():
+                        logging.warning(f"⚠️ Skipping empty file: {input_path}")
+                        skipped += 1
+                        continue
+
+                # Convert file
+                convert_file(input_path, output_path, template_path="templates", title=title)
+                converted += 1
+
+            except Exception as e:
+                logging.error(f"Failed to convert {input_path}: {e}")
+                errors += 1
+
+            logging.info(f"✅ Done: {converted} converted, {skipped} skipped, {errors} errors.")
