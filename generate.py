@@ -7,6 +7,26 @@ import logging
 from datetime import datetime
 import yaml
 
+VERSION = "chalkdust v0.1.0"
+ABOUT = (
+    "chalkdust – a minimal static site generator for maths notes.\n"
+    "Built for clean, LaTeX-style markdown → HTML conversion with MathJax support."
+)
+ASCII_7 = '''
+chalkdustchalkdustchalkdustchalkdustchalkdust
+chalkdustchalkdustchalkdustchalkdustchalkdust
+                                      chalkdust
+                                  chalkdust
+                               chalkdust
+                            chalkdust
+                         chalkdust
+                      chalkdust
+                   chalkdust
+              chalkdust
+         chalkdust
+     chalkdust
+chalkdust
+'''
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Convert Markdown maths notes to HTML.")
@@ -15,6 +35,9 @@ def parse_args():
     parser.add_argument("--output", type=str, help="Output folder for .html files")
     parser.add_argument("--title", type=str, help="Custom title for a single note")
     parser.add_argument("--config", type=str, help="Path to config.yaml file (optional)")
+    parser.add_argument("--version", action="store_true", help="Show version info and exit")
+    parser.add_argument("--about", action="store_true", help="Show project description and exit")
+    parser.add_argument("--dust", action="store_true", help=argparse.SUPPRESS)
     # Mutually exclusive group for overwrite options
     overwrite_group = parser.add_mutually_exclusive_group()
     overwrite_group.add_argument("--no-overwrite", action="store_true", help="Skip files that already exist")
@@ -88,6 +111,19 @@ def convert_file(input_path, output_path, template_path, title="Chalkdust Note")
 
 if __name__ == "__main__":
     args = parse_args()
+
+    if args.version:
+        print(VERSION)
+        sys.exit(0)
+
+    if args.about:
+        print(ABOUT)
+        sys.exit(0)
+
+    if args.dust:
+        print("You found the 7 🕵️‍♀️")
+        print(ASCII_7)
+        sys.exit(0)
 
     # Load config file
     config_data = {}
